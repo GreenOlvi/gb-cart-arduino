@@ -7,6 +7,7 @@ Cartridge::Cartridge(const uint8_t addressPins[16], const uint8_t dataPins[8], c
     _writePin = writePin;
     _readPin = readPin;
     _clockPin = clockPin;
+    setupPins();
 }
 
 byte Cartridge::readByte(const unsigned short address)
