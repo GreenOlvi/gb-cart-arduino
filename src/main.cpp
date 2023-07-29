@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "CartridgeReader.h"
+#include "Cartridge.h"
 
 #define WRITE_PIN 14
 #define READ_PIN 15
@@ -7,7 +7,7 @@
 byte addressPins[16] = { 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52 };
 byte dataPins[8] = { A8, A9, A10, A11, A12, A13, A14, A15 };
 
-CartridgeReader reader(addressPins, dataPins, WRITE_PIN, READ_PIN, CLOCK_PIN);
+Cartridge reader(addressPins, dataPins, WRITE_PIN, READ_PIN, CLOCK_PIN);
 
 void printByte(byte b) {
     char str[4];

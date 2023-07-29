@@ -5,10 +5,10 @@
 
 #define ClockToggleDelayMicroseconds 10
 
-class CartridgeReader
+class Cartridge
 {
 public:
-    CartridgeReader(const uint8_t addressPins[16], const uint8_t dataPins[8], const uint8_t writePin, const uint8_t readPin, const uint8_t clockPin);
+    Cartridge(const uint8_t addressPins[16], const uint8_t dataPins[8], const uint8_t writePin, const uint8_t readPin, const uint8_t clockPin);
 
     byte readByte(const unsigned short address);
     void readBytes(byte *buffer, const unsigned short address, const unsigned short count);

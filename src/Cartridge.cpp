@@ -1,6 +1,6 @@
-#include "CartridgeReader.h"
+#include "Cartridge.h"
 
-CartridgeReader::CartridgeReader(const uint8_t addressPins[16], const uint8_t dataPins[8], const uint8_t writePin, const uint8_t readPin, const uint8_t clockPin)
+Cartridge::Cartridge(const uint8_t addressPins[16], const uint8_t dataPins[8], const uint8_t writePin, const uint8_t readPin, const uint8_t clockPin)
 {
     memccpy(_addressPins, addressPins, 16, sizeof(uint8_t) * 16);
     memccpy(_dataPins, dataPins, 8, sizeof(uint8_t) * 8);
@@ -9,7 +9,7 @@ CartridgeReader::CartridgeReader(const uint8_t addressPins[16], const uint8_t da
     _clockPin = clockPin;
 }
 
-byte CartridgeReader::readByte(const unsigned short address)
+byte Cartridge::readByte(const unsigned short address)
 {
     clockHigh();
 
@@ -26,7 +26,7 @@ byte CartridgeReader::readByte(const unsigned short address)
     return b;
 }
 
-void CartridgeReader::readBytes(byte *buffer, const unsigned short address, const unsigned short count)
+void Cartridge::readBytes(byte *buffer, const unsigned short address, const unsigned short count)
 {
     for (unsigned short i = 0; i < count; i++)
     {
@@ -34,7 +34,7 @@ void CartridgeReader::readBytes(byte *buffer, const unsigned short address, cons
     }
 }
 
-void CartridgeReader::writeByte(const unsigned short address, const byte value)
+void Cartridge::writeByte(const unsigned short address, const byte value)
 {
     clockHigh();
 
@@ -47,7 +47,7 @@ void CartridgeReader::writeByte(const unsigned short address, const byte value)
     digitalWrite(_writePin, HIGH);
 }
 
-void CartridgeReader::setupPins(void)
+void Cartridge::setupPins(void)
 {
     pinMode(_writePin, OUTPUT);
     pinMode(_readPin, OUTPUT);
@@ -66,7 +66,7 @@ void CartridgeReader::setupPins(void)
     digitalWrite(_writePin, HIGH);
 }
 
-void CartridgeReader::setDataToRead(void)
+void Cartridge::setDataToRead(void)
 {
     if (!_dataWrite)
     {
@@ -80,7 +80,7 @@ void CartridgeReader::setDataToRead(void)
     _dataWrite = false;
 }
 
-void CartridgeReader::setDataToWrite(void)
+void Cartridge::setDataToWrite(void)
 {
     if (_dataWrite)
     {
@@ -94,7 +94,7 @@ void CartridgeReader::setDataToWrite(void)
     _dataWrite = true;
 }
 
-void CartridgeReader::setAddress(const unsigned short address)
+void Cartridge::setAddress(const unsigned short address)
 {
     for (byte i = 0; i < 16; i++)
     {
@@ -110,19 +110,19 @@ void CartridgeReader::setAddress(const unsigned short address)
     }
 }
 
-void CartridgeReader::clockHigh(void)
+void Cartridge::clockHigh(void)
 {
     digitalWrite(_clockPin, HIGH);
     delayMicroseconds(ClockToggleDelayMicroseconds);
 }
 
-void CartridgeReader::clockLow(void)
+void Cartridge::clockLow(void)
 {
     digitalWrite(_clockPin, LOW);
     delayMicroseconds(ClockToggleDelayMicroseconds);
 }
 
-byte CartridgeReader::readData(void)
+byte Cartridge::readData(void)
 {
     byte result = 0;
     for (byte i = 0; i < 8; i++)
@@ -135,7 +135,7 @@ byte CartridgeReader::readData(void)
     return result;
 }
 
-void CartridgeReader::writeData(byte value)
+void Cartridge::writeData(byte value)
 {
     for (int i = 0; i < 8; i++)
     {
