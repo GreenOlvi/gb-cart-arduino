@@ -2,6 +2,7 @@
 #include <Base64.h>
 #include "Cartridge.h"
 #include "InputHelper.h"
+#include "OutputHelper.h"
 
 #define VERSION "1.0-alpha"
 
@@ -17,64 +18,6 @@ byte addressPins[16] = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 
 byte dataPins[8] = {A8, A9, A10, A11, A12, A13, A14, A15};
 
 Cartridge reader(addressPins, dataPins, WRITE_PIN, READ_PIN, CLOCK_PIN);
-
-void printByte(byte b)
-{
-    char str[4];
-    sprintf(str, " %02x", b);
-    Serial.print(str);
-}
-
-void printUShort(unsigned short s)
-{
-    char str[6];
-    sprintf(str, " %04x", s);
-    Serial.print(str);
-}
-
-bool arraysEqual(byte *a, byte *b, unsigned short count)
-{
-    for (unsigned short i = 0; i < count; i++)
-    {
-        if (a[i] != b[i])
-        {
-            Serial.print("Difference at 0x");
-            Serial.println(i, 16);
-            printByte(a[i]);
-            printByte(b[i]);
-            Serial.println();
-            return false;
-        }
-    }
-    return true;
-}
-
-void dumpByteArray(byte *arr, unsigned short count, unsigned short address = 0x0000)
-{
-    for (unsigned short j = 0; j < count / 16; j++)
-    {
-        printUShort((j * 16) + address);
-        Serial.print(": ");
-        for (int i = 0; i < 16; i++)
-        {
-            printByte(arr[(j << 4) + i]);
-        }
-        Serial.println();
-    }
-
-    int r = count % 16;
-    if (r > 0)
-    {
-        int j = count - r;
-        printUShort(j + address);
-        Serial.print(": ");
-        for (int i = 0; i < r; i++)
-        {
-            printByte(arr[j + i]);
-        }
-        Serial.println();
-    }
-}
 
 bool readAndVerify(unsigned short address, unsigned short count)
 {
@@ -97,7 +40,7 @@ bool readAndVerify(unsigned short address, unsigned short count)
     Serial.print(secondTime);
     Serial.println("ms");
 
-    bool result = arraysEqual(a, b, count);
+    bool result = cmpArrays(a, b, count);
 
     if (result)
     {
@@ -107,11 +50,11 @@ bool readAndVerify(unsigned short address, unsigned short count)
     {
         Serial.println("Failure");
         Serial.println("First:");
-        dumpByteArray(a, count, address);
+        hexDumpByteArray(a, count, address);
         Serial.println("Second:");
     }
 
-    dumpByteArray(b, count, address);
+    hexDumpByteArray(b, count, address);
 
     free(a);
     free(b);
@@ -199,29 +142,21 @@ void readBlockCommandResult(const unsigned short address, const unsigned short c
     byte a[count];
     reader.readBytes(a, address, count);
 #if READABLE_OUTPUT
-    dumpByteArray(a, count, address);
+    hexDumpByteArray(a, count, address);
 #endif
 #if ENCODED_OUTPUT
-    int encodedLength = Base64.encodedLength(count);
-    char encodedString[encodedLength + 1];
-    Base64.encode(encodedString, (char *)a, count);
-    Serial.println(encodedString);
+    encodeBase64(a, count);
 #endif
 }
 
-void printByteCommandResult(const unsigned short address)
+void readByteCommandResult(const unsigned short address)
 {
     auto b = reader.readByte(address);
 #if READABLE_OUTPUT
-    printUShort(address);
-    Serial.print(": ");
-    printByte(b);
-    Serial.println();
+    hexDumpByte(b, address);
 #endif
 #if ENCODED_OUTPUT
-    char encodedString[5];
-    Base64.encode(encodedString, (char *)&b, 1);
-    Serial.println(encodedString);
+    encodeBase64(b);
 #endif
 }
 
@@ -230,7 +165,7 @@ void runCommand(const CommandType command, const unsigned short arg1, const unsi
     switch (command)
     {
     case CommandType::ReadByte:
-        printByteCommandResult(arg1);
+        readByteCommandResult(arg1);
         break;
 
     case CommandType::ReadBlockWithCount:
@@ -243,7 +178,7 @@ void runCommand(const CommandType command, const unsigned short arg1, const unsi
 
     case CommandType::WriteByte:
         reader.writeByte(arg1, arg2);
-        printByteCommandResult(arg1);
+        readByteCommandResult(arg1);
         break;
 
     default:
