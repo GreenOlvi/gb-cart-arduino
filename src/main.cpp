@@ -1,6 +1,14 @@
 #include <Arduino.h>
+#include <Base64.h>
 #include "Cartridge.h"
 #include "InputHelper.h"
+
+#define VERSION "1.0-alpha"
+
+#define INIT_TESTS 0
+#define ENCODED_OUTPUT 1
+#define READABLE_OUTPUT 0
+#define INPUT_ECHO 1
 
 #define WRITE_PIN 14
 #define READ_PIN 15
@@ -50,6 +58,19 @@ void dumpByteArray(byte *arr, unsigned short count, unsigned short address = 0x0
         for (int i = 0; i < 16; i++)
         {
             printByte(arr[(j << 4) + i]);
+        }
+        Serial.println();
+    }
+
+    int r = count % 16;
+    if (r > 0)
+    {
+        int j = count - r;
+        printUShort(j + address);
+        Serial.print(": ");
+        for (int i = 0; i < r; i++)
+        {
+            printByte(arr[j + i]);
         }
         Serial.println();
     }
@@ -106,14 +127,6 @@ void switchBlock(word blockNumber)
     Serial.println(blockNumber);
 }
 
-void dumpData()
-{
-    byte mbc = reader.readByte(0x0147);
-    Serial.print("MBC type = ");
-    printByte(mbc);
-    Serial.println();
-}
-
 void initTests()
 {
     Serial.println("Reading first block");
@@ -134,10 +147,14 @@ void setup()
     while (!Serial);
     Serial.begin(115200);
 
-    // initTests();
+    Serial.println("GB cart reader " VERSION);
+
+#if INIT_TESTS
+    initTests();
+#endif
 
     digitalWrite(LED_BUILTIN, LOW);
-    Serial.print("> ");
+    Serial.println();
 }
 
 const char endChar = '\n';
@@ -160,34 +177,52 @@ bool readInput()
             {
                 inputIndex = maxChars - 1;
             }
+            #if INPUT_ECHO
             Serial.print(rc);
+            #endif
         }
         else {
             inputChars[inputIndex] = '\0';
             inputIndex = 0;
             inputFinished = true;
+            #if INPUT_ECHO
             Serial.println();
+            #endif
         }
     }
 
     return inputFinished;
 }
 
-void readBlockCommand(const unsigned short address, const unsigned short count)
+void readBlockCommandResult(const unsigned short address, const unsigned short count)
 {
-    byte *a = new byte[count];
+    byte a[count];
     reader.readBytes(a, address, count);
+#if READABLE_OUTPUT
     dumpByteArray(a, count, address);
+#endif
+#if ENCODED_OUTPUT
+    int encodedLength = Base64.encodedLength(count);
+    char encodedString[encodedLength + 1];
+    Base64.encode(encodedString, (char *)a, count);
+    Serial.println(encodedString);
+#endif
 }
 
-void printByteCommand(const unsigned short address)
+void printByteCommandResult(const unsigned short address)
 {
     auto b = reader.readByte(address);
+#if READABLE_OUTPUT
     printUShort(address);
     Serial.print(": ");
     printByte(b);
     Serial.println();
-    Serial.println();
+#endif
+#if ENCODED_OUTPUT
+    char encodedString[5];
+    Base64.encode(encodedString, (char *)&b, 1);
+    Serial.println(encodedString);
+#endif
 }
 
 void runCommand(const CommandType command, const unsigned short arg1, const unsigned short arg2)
@@ -195,20 +230,20 @@ void runCommand(const CommandType command, const unsigned short arg1, const unsi
     switch (command)
     {
     case CommandType::ReadByte:
-        printByteCommand(arg1);
+        printByteCommandResult(arg1);
         break;
 
     case CommandType::ReadBlockWithCount:
-        readBlockCommand(arg1, arg2);
+        readBlockCommandResult(arg1, arg2);
         break;
     
     case CommandType::ReadBlockAbsolute:
-        readBlockCommand(arg1, arg2 - arg1);
+        readBlockCommandResult(arg1, arg2 - arg1 + 1);
         break;
 
     case CommandType::WriteByte:
         reader.writeByte(arg1, arg2);
-        printByteCommand(arg1);
+        printByteCommandResult(arg1);
         break;
 
     default:
@@ -221,10 +256,6 @@ void loop()
 {
     if (readInput())
     {
-        Serial.print("Read string: [");
-        Serial.print(inputChars);
-        Serial.println("]");
-
         unsigned short arg1, arg2;
         CommandType c = parseInput(inputChars, arg1, arg2);
         runCommand(c, arg1, arg2);

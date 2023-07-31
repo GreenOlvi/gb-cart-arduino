@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#define PARSER_DEBUG 0
+
 enum CommandType
 {
     Unknown = 0,

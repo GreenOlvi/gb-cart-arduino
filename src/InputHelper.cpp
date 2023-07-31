@@ -91,8 +91,10 @@ CommandType parseRead(const char *input, int &i, unsigned short &arg1, unsigned 
         return CommandType::Unknown;
     }
 
+#if PARSER_DEBUG
     Serial.print("Address = ");
     Serial.println(address);
+#endif
 
     if (input[i] == 0x00)
     {
@@ -109,8 +111,11 @@ CommandType parseRead(const char *input, int &i, unsigned short &arg1, unsigned 
             return CommandType::Unknown;
         }
 
+#if PARSER_DEBUG
         Serial.print("End address = ");
         Serial.println(endAddress);
+#endif
+
         arg1 = address;
         arg2 = endAddress;
         return CommandType::ReadBlockAbsolute;
@@ -126,8 +131,11 @@ CommandType parseRead(const char *input, int &i, unsigned short &arg1, unsigned 
             return CommandType::Unknown;
         }
 
+#if PARSER_DEBUG
         Serial.print("Count = ");
         Serial.println(count);
+#endif
+
         arg1 = address;
         arg2 = count;
         return CommandType::ReadBlockWithCount;
@@ -146,8 +154,10 @@ CommandType parseWrite(const char *input, int &i, unsigned short &arg1, unsigned
         return CommandType::Unknown;
     }
 
+#if PARSER_DEBUG
     Serial.print("Address = ");
     Serial.println(address);
+#endif
 
     if (input[i] == ' ')
     {
@@ -159,8 +169,11 @@ CommandType parseWrite(const char *input, int &i, unsigned short &arg1, unsigned
             return CommandType::Unknown;
         }
 
+#if PARSER_DEBUG
         Serial.print("Value = ");
         Serial.println(value);
+#endif
+
         arg1 = address;
         arg2 = value;
         return CommandType::WriteByte;
@@ -180,8 +193,11 @@ CommandType parseInput(const char *input, unsigned short &arg1, unsigned short &
     {
         return CommandType::Unknown;
     }
+
+#if PARSER_DEBUG
     Serial.print("Command char = ");
     Serial.println(cmd);
+#endif
 
     switch (cmd) {
         case 'r':
