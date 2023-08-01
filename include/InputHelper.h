@@ -16,4 +16,8 @@ enum CommandType
 
 CommandType parseInput(const char *input, unsigned short &arg1, unsigned short &arg2);
 
+bool tryParseNumber(const char *input, int &i, unsigned short &value);
+bool tryParseDec(const char* input, int &i, unsigned short &value);
+bool tryParseHex(const char* input, int &i, unsigned short &value);
+
 #endif

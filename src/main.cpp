@@ -1,10 +1,12 @@
+#ifndef PIO_UNIT_TESTING
+
 #include <Arduino.h>
 #include <Base64.h>
 #include "Cartridge.h"
 #include "InputHelper.h"
 #include "OutputHelper.h"
 
-#define VERSION "1.0-alpha"
+#define VERSION "1.0.0-rc"
 
 #define INIT_TESTS 0
 #define ENCODED_OUTPUT 1
@@ -196,3 +198,5 @@ void loop()
         runCommand(c, arg1, arg2);
     }
 }
+
+#endif
