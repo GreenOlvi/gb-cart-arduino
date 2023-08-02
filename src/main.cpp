@@ -6,7 +6,7 @@
 #include "InputHelper.h"
 #include "OutputHelper.h"
 
-#define VERSION "1.0.0-rc"
+#define VERSION "1.0.0"
 
 #define INIT_TESTS 0
 #define ENCODED_OUTPUT 1

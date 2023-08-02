@@ -106,116 +106,130 @@ bool tryParseNumber(const char *input, int &i, unsigned short &value)
         || tryParseDec(input, i, value);
 }
 
-CommandType parseRead(const char *input, int &i, unsigned short &arg1, unsigned short &arg2)
+bool tryParseReadByteCommand(const char *input, unsigned short &arg1)
 {
-    tryConsumeSpaces(input, i);
-
+    int i = 0;
     unsigned short address;
-    if (!tryParseNumber(input, i, address))
+    if (tryConsumeOne(input, i, 'r')
+        && tryConsumeSpaces(input, i)
+        && tryParseNumber(input, i, address)
+        && isFinished(input, i))
     {
-        return CommandType::Unknown;
-    }
 
-#if PARSER_DEBUG
-    Serial.print("Address = ");
-    Serial.println(address);
-#endif
-
-    if (isFinished(input, i))
-    {
-        arg1 = address;
-        return CommandType::ReadByte;
-    }
-
-    if (tryConsumeOne(input, i, '-'))
-    {
-        unsigned short endAddress;
-        if (!tryParseNumber(input, i, endAddress))
-        {
-            return CommandType::Unknown;
-        }
-
-#if PARSER_DEBUG
-        Serial.print("End address = ");
-        Serial.println(endAddress);
-#endif
+        #if PARSER_DEBUG
+        Serial.print("ReadByte(Address=");
+        Serial.print(address);
+        Serial.println(")");
+        #endif
 
         arg1 = address;
-        arg2 = endAddress;
-        return CommandType::ReadBlockAbsolute;
+        return true;
     }
 
-    if (tryConsumeSpaces(input, i))
-    {
-        unsigned short count;
-        if (!tryParseNumber(input, i, count))
-        {
-            return CommandType::Unknown;
-        }
+    return false;
+}
 
-#if PARSER_DEBUG
-        Serial.print("Count = ");
-        Serial.println(count);
-#endif
+bool tryParseReadBlockWithCountCommand(const char *input, unsigned short &arg1, unsigned short &arg2)
+{
+    int i = 0;
+    unsigned short address, count;
+    if (tryConsumeOne(input, i, 'r')
+        && tryConsumeSpaces(input, i)
+        && tryParseNumber(input, i, address)
+        && tryConsumeSpaces(input, i)
+        && tryParseNumber(input, i, count))
+    {
+
+        #if PARSER_DEBUG
+        Serial.print("ReadBlockWithCount(Address=");
+        Serial.print(address);
+        Serial.print(";Count=");
+        Serial.print(count);
+        Serial.println(")");
+        #endif
 
         arg1 = address;
         arg2 = count;
-        return CommandType::ReadBlockWithCount;
+        return true;
     }
 
-    return CommandType::Unknown;
+    return false;
 }
 
-CommandType parseWrite(const char *input, int &i, unsigned short &arg1, unsigned short &arg2)
+bool tryParseReadBlockAbsoluteCommand(const char *input, unsigned short &arg1, unsigned short &arg2)
 {
-    tryConsumeSpaces(input, i);
-
-    unsigned short address;
-    if (!tryParseNumber(input, i, address))
+    int i = 0;
+    unsigned short addressStart, addressEnd;
+    if (tryConsumeOne(input, i, 'r')
+        && tryConsumeSpaces(input, i)
+        && tryParseNumber(input, i, addressStart)
+        && tryConsumeOne(input, i, '-')
+        && tryParseNumber(input, i, addressEnd))
     {
-        return CommandType::Unknown;
+
+        #if PARSER_DEBUG
+        Serial.print("ReadBlockAbsolute(AddressStart=");
+        Serial.print(addressStart);
+        Serial.print(";AddressEnd=");
+        Serial.print(addressEnd);
+        Serial.println(")");
+        #endif
+
+        arg1 = addressStart;
+        arg2 = addressEnd;
+        return true;
     }
 
-#if PARSER_DEBUG
-    Serial.print("Address = ");
-    Serial.println(address);
-#endif
+    return false;
+}
 
-    if (tryConsumeSpaces(input, i))
+bool tryParseWriteByteCommand(const char *input, unsigned short &arg1, unsigned short &arg2)
+{
+    int i = 0;
+    unsigned short address, value;
+    if (tryConsumeOne(input, i, 'w')
+        && tryConsumeSpaces(input, i)
+        && tryParseNumber(input, i, address)
+        && tryConsumeSpaces(input, i)
+        && tryParseNumber(input, i, value))
     {
-        unsigned short value;
-        if (!tryParseHex(input, i, value))
-        {
-            return CommandType::Unknown;
-        }
 
-#if PARSER_DEBUG
-        Serial.print("Value = ");
-        Serial.println(value);
-#endif
+        #if PARSER_DEBUG
+        Serial.print("ReadBlockAbsolute(Address=");
+        Serial.print(address);
+        Serial.print(";Value=");
+        Serial.print(value);
+        Serial.println(")");
+        #endif
 
         arg1 = address;
         arg2 = value;
-        return CommandType::WriteByte;
+        return true;
     }
 
-    return CommandType::Unknown;
+    return false;
 }
 
 CommandType parseInput(const char *input, unsigned short &arg1, unsigned short &arg2)
 {
-    int i = 0;
-
-    tryConsumeSpaces(input, i);
-
-    if (tryConsumeOne(input, i, 'r'))
+    if (tryParseReadByteCommand(input, arg1))
     {
-        return parseRead(input, i, arg1, arg2);
+        return CommandType::ReadByte;
     }
 
-    if (tryConsumeOne(input, i, 'w'))
+    if (tryParseReadBlockWithCountCommand(input, arg1, arg2))
     {
-        return parseWrite(input, i, arg1, arg2);
+        return CommandType::ReadBlockWithCount;
+    }
+
+    if (tryParseReadBlockAbsoluteCommand(input, arg1, arg2))
+    {
+        return CommandType::ReadBlockAbsolute;
+    }
+
+    if (tryParseWriteByteCommand(input, arg1, arg2))
+    {
+        return CommandType::WriteByte;
     }
 
     return CommandType::Unknown;
