@@ -13,7 +13,7 @@ Functionality:
 
 Version 1 supported only boards with number of gpio pins at least 27 (i.e. Arduino Mega) since address bus required pin for each bit.
 
-Version 2 connects to address bus using two 74595 shift registers which reduces number of pins required to 17.
+Version 2 connects to address bus using two 74595 shift registers which reduces number of pins required to 14.
 
 Boards must be 5V compatible.
 
