@@ -13,13 +13,15 @@
 #define READABLE_OUTPUT 0
 #define INPUT_ECHO 1
 
+#define ADDR_DATA_PIN 5
+#define ADDR_LATCH_PIN 6
+#define ADDR_CLOCK_PIN 7
 #define WRITE_PIN 14
 #define READ_PIN 15
 #define CLOCK_PIN 16
-byte addressPins[16] = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52};
 byte dataPins[8] = {A8, A9, A10, A11, A12, A13, A14, A15};
 
-Cartridge reader(addressPins, dataPins, WRITE_PIN, READ_PIN, CLOCK_PIN);
+Cartridge cart(ADDR_LATCH_PIN, ADDR_CLOCK_PIN, ADDR_DATA_PIN, dataPins, WRITE_PIN, READ_PIN, CLOCK_PIN);
 
 bool readAndVerify(unsigned short address, unsigned short count)
 {
@@ -28,7 +30,7 @@ bool readAndVerify(unsigned short address, unsigned short count)
 
     auto firstStart = millis();
     Serial.print("Reading first... ");
-    reader.readBytes(a, address, count);
+    cart.readBytes(a, address, count);
     auto firstTime = millis() - firstStart;
     Serial.print(firstTime);
     Serial.println("ms");
@@ -37,7 +39,7 @@ bool readAndVerify(unsigned short address, unsigned short count)
 
     auto secondStart = millis();
     Serial.print("Reading second... ");
-    reader.readBytes(b, address, count);
+    cart.readBytes(b, address, count);
     auto secondTime = millis() - secondStart;
     Serial.print(secondTime);
     Serial.println("ms");
@@ -66,8 +68,8 @@ bool readAndVerify(unsigned short address, unsigned short count)
 
 void switchBlock(word blockNumber)
 {
-    reader.writeByte(0x2000, blockNumber & 0x00ff);
-    reader.writeByte(0x3000, (blockNumber & 0x0100) >> 8);
+    cart.writeByte(0x2000, blockNumber & 0x00ff);
+    cart.writeByte(0x3000, (blockNumber & 0x0100) >> 8);
     Serial.print("Switched to block ");
     Serial.println(blockNumber);
 }
@@ -142,7 +144,7 @@ bool readInput()
 void readBlockCommandResult(const unsigned short address, const unsigned short count)
 {
     byte a[count];
-    reader.readBytes(a, address, count);
+    cart.readBytes(a, address, count);
 #if READABLE_OUTPUT
     hexDumpByteArray(a, count, address);
 #endif
@@ -153,7 +155,7 @@ void readBlockCommandResult(const unsigned short address, const unsigned short c
 
 void readByteCommandResult(const unsigned short address)
 {
-    auto b = reader.readByte(address);
+    auto b = cart.readByte(address);
 #if READABLE_OUTPUT
     hexDumpByte(b, address);
 #endif
@@ -179,7 +181,7 @@ void runCommand(const CommandType command, const unsigned short arg1, const unsi
         break;
 
     case CommandType::WriteByte:
-        reader.writeByte(arg1, arg2);
+        cart.writeByte(arg1, arg2);
         readByteCommandResult(arg1);
         break;
 
