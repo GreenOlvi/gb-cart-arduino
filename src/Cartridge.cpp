@@ -1,12 +1,18 @@
 #include "Cartridge.h"
 
 Cartridge::Cartridge(const uint8_t addressPins[16], const uint8_t dataPins[8], const uint8_t writePin, const uint8_t readPin, const uint8_t clockPin)
+    : _writePin(writePin), _readPin(readPin), _clockPin(clockPin)
 {
-    memccpy(_addressPins, addressPins, 16, sizeof(uint8_t) * 16);
+    _addressBus = new PinArrayAddressBus(addressPins);
     memccpy(_dataPins, dataPins, 8, sizeof(uint8_t) * 8);
-    _writePin = writePin;
-    _readPin = readPin;
-    _clockPin = clockPin;
+    setupPins();
+}
+
+Cartridge::Cartridge(const uint8_t addrLatchPin, const uint8_t addrClockPin, const uint8_t addrDataPin, const uint8_t dataPins[8], const uint8_t writePin, const uint8_t readPin, const uint8_t clockPin)
+    : _writePin(writePin), _readPin(readPin), _clockPin(clockPin)
+{
+    _addressBus = new ShiftRegisterAddressBus(addrLatchPin, addrClockPin, addrDataPin);
+    memccpy(_dataPins, dataPins, 8, sizeof(uint8_t) * 8);
     setupPins();
 }
 
@@ -16,7 +22,7 @@ byte Cartridge::readByte(const unsigned short address)
 
     setDataToRead();
     digitalWrite(_readPin, LOW);
-    setAddress(address);
+    _addressBus->setAddress(address);
 
     clockLow();
 
@@ -41,7 +47,7 @@ void Cartridge::writeByte(const unsigned short address, const byte value)
 
     setDataToWrite();
     digitalWrite(_writePin, LOW);
-    setAddress(address);
+    _addressBus->setAddress(address);
     writeData(value);
 
     clockLow();
@@ -54,13 +60,11 @@ void Cartridge::setupPins(void)
     pinMode(_readPin, OUTPUT);
     pinMode(_clockPin, OUTPUT);
 
-    for (int i = 0; i < 16; i++) {
-        pinMode(_addressPins[i], OUTPUT);
-    }
-
     for (int i = 0; i < 8; i++) {
         pinMode(_dataPins[i], INPUT);
     }
+
+    _addressBus->setupPins();
 
     digitalWrite(_clockPin, LOW);
     digitalWrite(_writePin, HIGH);
@@ -93,22 +97,6 @@ void Cartridge::setDataToWrite(void)
         pinMode(_dataPins[i], OUTPUT);
     }
     _dataWrite = true;
-}
-
-void Cartridge::setAddress(const unsigned short address)
-{
-    for (byte i = 0; i < 16; i++)
-    {
-        unsigned short b = 1 << i;
-        if ((address & b) > 0)
-        {
-            digitalWrite(_addressPins[i], HIGH);
-        }
-        else
-        {
-            digitalWrite(_addressPins[i], LOW);
-        }
-    }
 }
 
 void Cartridge::clockHigh(void)
