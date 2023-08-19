@@ -17,6 +17,12 @@ Version 2 connects to address bus using two 74595 shift registers which reduces 
 
 Boards must be 5V compatible.
 
+## Schematic
+
+<picture>
+  <img alt="schematic-v2" src="/img/schematic-v2.png" />
+</picture>
+
 ## Release notes
 
 ### Version 2.0.0 (August 19, 2023)
